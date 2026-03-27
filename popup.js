@@ -277,3 +277,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+document.getElementById('copyBtn').addEventListener('click', function() {
+    const codeText = document.getElementById('exampleCode').innerText;
+    navigator.clipboard.writeText(codeText).then(() => {
+      const btn = this;
+      const originalText = btn.innerText;
+      btn.innerText = 'Copiado!';
+      btn.classList.add('success');
+
+      setTimeout(() => {
+        btn.innerText = originalText;
+        btn.classList.remove('success');
+      }, 2000);
+    });
+  });
