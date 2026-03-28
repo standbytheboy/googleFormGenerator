@@ -56,7 +56,7 @@ Verifique também se o scope está assim:
 
 ```json
 "scopes": [
-  "https://www.googleapis.com/auth/forms.body"
+  "[https://www.googleapis.com/auth/forms.body](https://www.googleapis.com/auth/forms.body)"
 ]
 ```
 
@@ -92,12 +92,22 @@ Se o Google Cloud pedir esse ID na credencial OAuth de extensão, volte ao passo
       "options": ["São Paulo", "Brasília", "Rio de Janeiro"],
       "correctAnswer": "Brasília",
       "points": 2
+    },
+    {
+      "type": "checkbox",
+      "text": "Quais destas são linguagens de programação?",
+      "options": ["Python", "HTML", "Java", "CSS"],
+      "correctAnswer": ["Python", "Java"],
+      "points": 3
     }
   ]
 }
 ```
 
-O formulário é criado **em modo teste** (`isQuiz`). Cada pergunta exige `correctAnswer`; para `radio`, esse valor deve ser **idêntico** a uma das strings em `options`. Opcional: `points` (inteiro >= 0, padrão 1).
+O formulário é criado **em modo teste** (`isQuiz`). Cada pergunta exige `correctAnswer`.
+- Para `radio` (escolha única), o valor de `correctAnswer` deve ser **idêntico** a uma das strings em `options`.
+- Para `checkbox` (múltipla escolha/caixas de seleção), o valor de `correctAnswer` deve ser um **array de strings** contendo as opções corretas.
+- Opcional: `points` (inteiro >= 0, padrão 1).
 
 3. Clique em **Criar formulário no Google**.
 4. Autorize o acesso quando o popup de login/permissão aparecer.
@@ -116,9 +126,9 @@ O formulário é criado **em modo teste** (`isQuiz`). Cada pergunta exige `corre
   - usuário não autorizado na tela de consentimento (modo teste)
 
 - **Popup abre, mas não cria formulário**
-  - confira o JSON (tipos aceitos: `text` e `radio`)
-  - perguntas `radio` precisam de `options` com pelo menos 1 item
-  - toda pergunta precisa de `correctAnswer`; em `radio`, deve coincidir com uma opção
+  - confira o JSON (tipos aceitos: `text`, `radio` e `checkbox`).
+  - perguntas `radio` e `checkbox` precisam de `options` com pelo menos 1 item.
+  - toda pergunta precisa de `correctAnswer`; em `radio`, deve coincidir com uma opção e em `checkbox` deve ser um array com pelo menos uma opção.
 
 ## 10) Estrutura esperada do JSON
 
@@ -133,10 +143,17 @@ O formulário é criado **em modo teste** (`isQuiz`). Cada pergunta exige `corre
     },
     {
       "type": "radio",
-      "text": "Pergunta de escolha",
-      "options": ["A", "B"],
+      "text": "Pergunta de escolha única",
+      "options": ["A", "B", "C"],
       "correctAnswer": "A",
       "points": 1
+    },
+    {
+      "type": "checkbox",
+      "text": "Pergunta de múltipla escolha",
+      "options": ["Opção 1", "Opção 2", "Opção 3", "Opção 4"],
+      "correctAnswer": ["Opção 1", "Opção 3"],
+      "points": 2
     }
   ]
 }
