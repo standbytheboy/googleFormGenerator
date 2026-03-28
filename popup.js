@@ -35,18 +35,33 @@ function questionPoints(q) {
 }
 
 function buildGrading(q) {
-  const pointValue = questionPoints(q);
-  const raw = q.correctAnswer;
-  if (typeof raw !== "string" || !raw.length) {
-    throw new Error("correctAnswer deve ser uma string não vazia.");
+    const pointValue = questionPoints(q);
+
+    // Se for checkbox, correctAnswer será um array
+    if (Array.isArray(q.correctAnswer)) {
+      if (q.correctAnswer.length === 0) {
+         throw new Error("Para 'checkbox', correctAnswer deve ter pelo menos 1 resposta.");
+      }
+      return {
+        pointValue,
+        correctAnswers: {
+          answers: q.correctAnswer.map(ans => ({ value: String(ans) })),
+        },
+      };
+    }
+
+    // Comportamento para text e radio
+    const raw = q.correctAnswer;
+    if (typeof raw !== 'string' || !raw.length) {
+      throw new Error('correctAnswer deve ser uma string não vazia ou um array.');
+    }
+    return {
+      pointValue,
+      correctAnswers: {
+        answers: [{ value: raw }],
+      },
+    };
   }
-  return {
-    pointValue,
-    correctAnswers: {
-      answers: [{ value: raw }],
-    },
-  };
-}
 
 async function formsBatchUpdate(formId, token, requests) {
   const res = await fetch(`https://forms.googleapis.com/v1/forms/${formId}:batchUpdate`, {
@@ -90,18 +105,26 @@ async function addQuestionsToForm(formId, questions, token) {
     let questionItem = {};
     const grading = buildGrading(q);
 
-    if (q.type === "text") {
-      questionItem = {
-        textQuestion: { paragraph: false },
-      };
-    } else if (q.type === "radio" && Array.isArray(q.options)) {
-      questionItem = {
-        choiceQuestion: {
-          type: "RADIO",
-          options: q.options.map((opt) => ({ value: String(opt) })),
-        },
-      };
-    }
+    if (q.type === 'text') {
+        questionItem = {
+          textQuestion: { paragraph: false },
+        };
+      } else if (q.type === 'radio' && Array.isArray(q.options)) {
+        questionItem = {
+          choiceQuestion: {
+            type: 'RADIO',
+            options: q.options.map((opt) => ({ value: String(opt) })),
+          },
+        };
+      } else if (q.type === 'checkbox' && Array.isArray(q.options)) {
+        // Novo bloco para checkbox (caixas de seleção)
+        questionItem = {
+          choiceQuestion: {
+            type: 'CHECKBOX',
+            options: q.options.map((opt) => ({ value: String(opt) })),
+          },
+        };
+      }
 
     return {
       createItem: {
@@ -202,43 +225,26 @@ function parseAndValidateJson(raw) {
     if (!q || typeof q !== "object") {
       throw new Error(`Pergunta ${idx + 1} é inválida.`);
     }
-    if (q.type !== "text" && q.type !== "radio") {
-      throw new Error(
-        `Pergunta ${idx + 1}: tipo inválido "${q.type}". Use "text" ou "radio".`
-      );
-    }
-    if (typeof q.text !== "string" || !q.text.trim()) {
-      throw new Error(`Pergunta ${idx + 1}: campo "text" é obrigatório.`);
-    }
-    if (typeof q.correctAnswer !== "string" || !q.correctAnswer.length) {
-      throw new Error(
-        `Pergunta ${idx + 1}: campo "correctAnswer" (string) é obrigatório para o modo teste.`
-      );
-    }
-    if (q.points !== undefined) {
-      if (
-        typeof q.points !== "number" ||
-        !Number.isFinite(q.points) ||
-        q.points < 0
-      ) {
-        throw new Error(
-          `Pergunta ${idx + 1}: "points", se informado, deve ser um número >= 0.`
-        );
+    if (q.type === 'text') {
+        questionItem = {
+          textQuestion: { paragraph: false },
+        };
+      } else if (q.type === 'radio' && Array.isArray(q.options)) {
+        questionItem = {
+          choiceQuestion: {
+            type: 'RADIO',
+            options: q.options.map((opt) => ({ value: String(opt) })),
+          },
+        };
+      } else if (q.type === 'checkbox' && Array.isArray(q.options)) {
+        // Novo bloco para checkbox (caixas de seleção)
+        questionItem = {
+          choiceQuestion: {
+            type: 'CHECKBOX',
+            options: q.options.map((opt) => ({ value: String(opt) })),
+          },
+        };
       }
-    }
-    if (q.type === "radio") {
-      if (!Array.isArray(q.options) || q.options.length === 0) {
-        throw new Error(
-          `Pergunta ${idx + 1}: para "radio" é obrigatório informar "options" com pelo menos 1 opção.`
-        );
-      }
-      const opts = q.options.map((o) => String(o));
-      if (!opts.includes(q.correctAnswer)) {
-        throw new Error(
-          `Pergunta ${idx + 1}: "correctAnswer" deve ser exatamente uma das strings em "options".`
-        );
-      }
-    }
   });
 
   return data;
